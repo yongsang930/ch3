@@ -1,8 +1,21 @@
+package com.fastcampus.ch3;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+
 import com.fastcampus.ch3.User;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -12,6 +25,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 
 import static org.junit.Assert.*;
@@ -21,6 +35,37 @@ import static org.junit.Assert.*;
 public class DBConnectionTest2Test {
     @Autowired
     DataSource ds;
+
+    @Test
+    public void TestTransactionTest() throws Exception{
+        Connection conn = null;
+        try {
+            deleteAll();
+            conn = ds.getConnection();
+            conn.setAutoCommit(false);
+
+            String sql = "insert into user_info values (?,?,?,?,?,?,now())";
+
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, "asdf");
+            pstmt.setString(2, "1234");
+            pstmt.setString(3, "park");
+            pstmt.setString(4, "zzz@zzz");
+            pstmt.setDate(5, new java.sql.Date(new Date().getTime()));
+            pstmt.setString(6, "fb");
+
+            int rowCnt = pstmt.executeUpdate(); // insert, delete, update
+
+            pstmt.setString(1, "asdf2");
+            rowCnt = pstmt.executeUpdate();
+
+            conn.commit();
+        } catch (Exception e) {
+            conn.rollback();
+            e.printStackTrace();
+        } finally {
+        }
+    }
 
     @Test
     public void TestinsertUser() throws Exception {
@@ -71,8 +116,7 @@ public class DBConnectionTest2Test {
     }
 
     @Test
-    public void TestUpdateUser()throws Exception{
-        deleteAll();
+    public void TestUpdateUser() throws Exception {
 
         deleteAll();
         User user = new User("asdf2", "1234", "abc", "aaaa@aaa.com", new Date(), "fb", new Date());
@@ -139,6 +183,7 @@ public class DBConnectionTest2Test {
         PreparedStatement pstmt = conn.prepareStatement(sql);
         pstmt.executeUpdate();
     }
+
 
     public int insertUser(User user) throws Exception {
         Connection conn = ds.getConnection();
